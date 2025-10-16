@@ -1,74 +1,64 @@
-<!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>YouTube Search Widget (Proxy)</title>
-  <style>
-    body{background:#0f1724;color:#eee;font-family:sans-serif;margin:0;padding:20px}
-    .card{display:flex;gap:10px;background:#151b2a;border-radius:8px;padding:10px;margin:10px 0}
-    img{border-radius:6px}
-    input{padding:8px;width:70%;border-radius:6px;border:1px solid #333;background:#101523;color:#eee}
-    button{padding:8px 12px;border:none;border-radius:6px;background:#ff0054;color:white;cursor:pointer}
-  </style>
-</head>
-<body>
-  <h2>YouTube Search</h2>
-  <input id="query" placeholder="Search YouTube videos..." />
-  <button id="search">Search</button>
-  <div id="results"></div>
+<script>
+  const qEl = document.getElementById('query');
+  const btn = document.getElementById('search');
+  const results = document.getElementById('results');
 
-  <script>
-    const qEl = document.getElementById('query');
-    const btn = document.getElementById('search');
-    const results = document.getElementById('results');
+  // --- Safe duration parser ---
+  function parseDuration(iso) {
+    try {
+      if (!iso || typeof iso !== "string") return "";
+      const m = iso.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/);
+      if (!m) return "";
+      const h = parseInt(m[1] || 0);
+      const min = parseInt(m[2] || 0);
+      const s = parseInt(m[3] || 0);
+      const mm = (h * 60 + min).toString().padStart(2, "0");
+      const ss = s.toString().padStart(2, "0");
+      return (h ? h + ":" : "") + mm + ":" + ss;
+    } catch (e) {
+      console.warn("Bad duration value:", iso);
+      return "";
+    }
+  }
 
- function parseDuration(iso) {
-  if (!iso || typeof iso !== "string") return "";
-  const m = iso.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/);
-  if (!m) return "";
-  const h = +m[1] || 0;
-  const min = +m[2] || 0;
-  const s = +m[3] || 0;
-  const total = h * 3600 + min * 60 + s;
-  const mm = Math.floor(total / 60) % 60;
-  const ss = total % 60;
-  return (h ? h + ":" : "") + mm.toString().padStart(2, "0") + ":" + ss.toString().padStart(2, "0");
-}
+  btn.onclick = async () => {
+    const q = qEl.value.trim();
+    if (!q) return;
+    results.innerHTML = 'Loading...';
+    try {
+      const res = await fetch(`/api/search?query=${encodeURIComponent(q)}`);
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
 
-
-    btn.onclick = async () => {
-      const q = qEl.value.trim();
-      if(!q) return;
-      results.innerHTML = 'Loading...';
-      try {
-        const res = await fetch(`/api/search?query=${encodeURIComponent(q)}`);
-        const data = await res.json();
-        if(data.error) throw new Error(data.error);
-        results.innerHTML = '';
-        data.items.forEach(it => {
-          const id = it.id.videoId;
-          const s = it.snippet;
-          const meta = data.meta[id] || {};
-          const dur = parseDuration(meta.duration || '');
-          const view = meta.viewCount ? Number(meta.viewCount).toLocaleString() : '';
-          const card = document.createElement('div');
-          card.className = 'card';
-          card.innerHTML = `
-            <img src="${s.thumbnails.medium.url}" width="160" />
-            <div>
-              <div><b>${s.title}</b></div>
-              <div>${s.channelTitle}</div>
-              <div>${dur} • ${view} views</div>
-              <a target="_blank" href="https://www.youtube.com/watch?v=${id}">Watch</a>
-            </div>
-          `;
-          results.appendChild(card);
-        });
-      } catch(err) {
-        results.innerHTML = `<div style="color:red">${err.message}</div>`;
+      results.innerHTML = '';
+      if (!Array.isArray(data.items)) {
+        results.innerHTML = '<div>No results found.</div>';
+        return;
       }
-    };
-  </script>
-</body>
-</html>
+
+      data.items.forEach(it => {
+        if (!it.id || !it.id.videoId) return;
+        const id = it.id.videoId;
+        const s = it.snippet || {};
+        const meta = (data.meta && data.meta[id]) || {};
+        const dur = parseDuration(meta.duration);
+        const view = meta.viewCount ? Number(meta.viewCount).toLocaleString() : "–";
+
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.innerHTML = `
+          <img src="${s.thumbnails?.medium?.url || ''}" width="160" />
+          <div>
+            <div><b>${s.title || '(Untitled video)'}</b></div>
+            <div>${s.channelTitle || ''}</div>
+            <div>${dur || ''} ${view !== "–" ? ` • ${view} views` : ''}</div>
+            <a target="_blank" href="https://www.youtube.com/watch?v=${id}">Watch</a>
+          </div>
+        `;
+        results.appendChild(card);
+      });
+    } catch (err) {
+      results.innerHTML = `<div style="color:red">${err.message}</div>`;
+    }
+  };
+</script>
