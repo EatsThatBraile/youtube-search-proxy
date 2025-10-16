@@ -1,4 +1,24 @@
-<script>
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>YouTube Search Widget (Proxy)</title>
+  <style>
+    body{background:#0f1724;color:#eee;font-family:sans-serif;margin:0;padding:20px}
+    .card{display:flex;gap:10px;background:#151b2a;border-radius:8px;padding:10px;margin:10px 0}
+    img{border-radius:6px}
+    input{padding:8px;width:70%;border-radius:6px;border:1px solid #333;background:#101523;color:#eee}
+    button{padding:8px 12px;border:none;border-radius:6px;background:#ff0054;color:white;cursor:pointer}
+  </style>
+</head>
+<body>
+  <h2>YouTube Search</h2>
+  <input id="query" placeholder="Search YouTube videos..." />
+  <button id="search">Search</button>
+  <div id="results"></div>
+
+ <script>
   const qEl = document.getElementById('query');
   const btn = document.getElementById('search');
   const results = document.getElementById('results');
@@ -65,3 +85,5 @@
     }
   }
 </script>
+</body>
+</html>
