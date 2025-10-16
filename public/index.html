@@ -23,13 +23,19 @@
     const btn = document.getElementById('search');
     const results = document.getElementById('results');
 
-    function parseDuration(iso) {
-      const m = iso.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/);
-      const h = +m[1] || 0, min = +m[2] || 0, s = +m[3] || 0;
-      const total = h*3600+min*60+s;
-      const mm = Math.floor(total/60)%60, ss = total%60;
-      return (h ? h+':' : '') + mm.toString().padStart(2,'0') + ':' + ss.toString().padStart(2,'0');
-    }
+ function parseDuration(iso) {
+  if (!iso || typeof iso !== "string") return "";
+  const m = iso.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/);
+  if (!m) return "";
+  const h = +m[1] || 0;
+  const min = +m[2] || 0;
+  const s = +m[3] || 0;
+  const total = h * 3600 + min * 60 + s;
+  const mm = Math.floor(total / 60) % 60;
+  const ss = total % 60;
+  return (h ? h + ":" : "") + mm.toString().padStart(2, "0") + ":" + ss.toString().padStart(2, "0");
+}
+
 
     btn.onclick = async () => {
       const q = qEl.value.trim();
